@@ -1,0 +1,864 @@
+{
+  "name": "Report СЭМД",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9,15 * * 1-5"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -736,
+        -224
+      ],
+      "id": "a68016e9-8538-43c6-b59e-6d9230cd2968",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5993018e-dbd8-41b6-b32d-dd3be9c5c23b",
+              "leftValue": "={{ $now.hour }}",
+              "rightValue": "=9",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -528,
+        -224
+      ],
+      "id": "64b050d3-115a-4108-8107-9c41aa37faa1",
+      "name": "If 9:00"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5993018e-dbd8-41b6-b32d-dd3be9c5c23b",
+              "leftValue": "={{ $now.hour }}",
+              "rightValue": "=15",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -288,
+        -32
+      ],
+      "id": "fff298f2-4515-4812-b7c2-5bec12cad64b",
+      "name": "If 15:00"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        128,
+        -224
+      ],
+      "id": "4b472c1a-9ec4-4bc9-82c8-a6a497349175",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    w.WorkerName AS AuthorFIO,\n    COUNT(*) AS UnsignedCount\nFROM [dbo].[MedicalDocument] md\nJOIN [dbo].[Worker] w ON md.AuthorID_Ref = w.WorkerID\nWHERE md.MedicalDocumentStatusID_Ref = 2\n  AND md.MedicalDocumentDate >= '{{ $now.toFormat(\"yyyyMMdd\") }}'\n  AND md.MedicalDocumentDate <  '{{ $now.plus({days: 1}).toFormat(\"yyyyMMdd\") }}'\nGROUP BY w.WorkerName\nORDER BY UnsignedCount DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftSql",
+      "typeVersion": 1.2,
+      "position": [
+        -32,
+        -48
+      ],
+      "id": "4ce55b6b-923f-460f-af9e-1b496a02334d",
+      "name": "Microsoft SQL1 15:00",
+      "credentials": {
+        "microsoftSql": {
+          "id": "6GU76JSPf491yM4x",
+          "name": "Microsoft SQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    w.WorkerName AS AuthorFIO,\n    COUNT(*) AS UnsignedCount\nFROM [dbo].[MedicalDocument] md\nJOIN [dbo].[Worker] w ON md.AuthorID_Ref = w.WorkerID\nWHERE md.MedicalDocumentStatusID_Ref = 2\n  AND md.MedicalDocumentDate >= '{{ $now.minus({days: 1}).toFormat(\"yyyyMMdd\") }}'\n  AND md.MedicalDocumentDate <  '{{ $now.toFormat(\"yyyyMMdd\") }}'\nGROUP BY w.WorkerName\nORDER BY UnsignedCount DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftSql",
+      "typeVersion": 1.2,
+      "position": [
+        -288,
+        -240
+      ],
+      "id": "d7093883-0097-4aa3-b275-d536aa5ab258",
+      "name": "Microsoft SQL 9:00",
+      "credentials": {
+        "microsoftSql": {
+          "id": "6GU76JSPf491yM4x",
+          "name": "Microsoft SQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Y0EI6Z1LrvNOWwij",
+          "mode": "list",
+          "cachedResultName": "report_recipients",
+          "cachedResultUrl": "/projects/3LENRCaby8GIoTN0/datatables/Y0EI6Z1LrvNOWwij"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "fio",
+              "condition": "isNotEmpty"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        -480
+      ],
+      "id": "b6c2d8fa-ade7-41ff-9741-6c35875436fb",
+      "name": "Get row(s)",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "jsCode": "// Берем данные из Merge (результаты SQL)\nconst sqlRows = $input.all();\n\n// Получаем список всех получателей из таблицы (через узел Get row(s))\nlet allRecipients = [];\ntry {\n  allRecipients = $('Get row(s)').all();\n} catch (e) {\n  allRecipients = []; \n}\n\nconst messages = [];\n\n// --- БЛОК ОПРЕДЕЛЕНИЯ ВРЕМЕНИ (ВЧЕРА/СЕГОДНЯ) ---\nlet reportType = \"\";\n\nconst now = new Date();\nconst moscowTime = new Date(now.getTime() + (3 * 60 * 60 * 1000));\nconst currentHour = moscowTime.getUTCHours();\n\nif (currentHour < 12) {\n    reportType = \"за вчерашний день\";\n} else {\n    reportType = \"за текущий день\";\n}\n// ------------------------------------------------\n\n// Формируем сообщения\nfor (const item of sqlRows) {\n  const sqlData = item.json;\n  if (!sqlData || !sqlData.AuthorFIO) continue; // Пропускаем пустые строки\n\n  // Ищем врача в таблице получателей\n  const match = allRecipients.find(r => r.json.fio === sqlData.AuthorFIO);\n  \n  // Если нашли и у него есть ID в MAX\n  if (match && match.json.max_user_id) {\n    messages.push({\n      json: {\n        user_id: String(match.json.max_user_id),\n        text: `📋 ${sqlData.AuthorFIO}, у вас ${sqlData.UnsignedCount} неподписанных СЭМД (${reportType}). Пожалуйста, подпишите их.`\n      }\n    });\n  }\n}\n\nreturn messages;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        -224
+      ],
+      "id": "79d7224c-b527-47be-9b4e-856490a1beb9",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        784,
+        -224
+      ],
+      "id": "b6fa9923-ca99-43d7-b7b0-6e4215e8d046",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "max-bot-started-semd",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        -672,
+        208
+      ],
+      "id": "37035c0d-8f6b-4b6b-8c36-214b10472436",
+      "name": "Webhook",
+      "webhookId": "c033823f-fa6a-4e83-8565-e1357f4eacf7"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://platform-api2.max.ru/subscriptions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"url\": \"https://n8n.cardio32.ru/webhook/max-semd-bot-message\",\n  \"update_types\": [\"message_created\"]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -32,
+        192
+      ],
+      "id": "05949e4d-def2-4726-aeea-1f30713c4daf",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "xSbOjOQKgDBuoOSe",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "max-semd-bot-message",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        -688,
+        416
+      ],
+      "id": "5524140b-d4c1-476c-9cb4-b14cccd94d3b",
+      "name": "Webhook2",
+      "webhookId": "8aa9fc2e-06e8-4c3a-ae01-032e4cfa601d"
+    },
+    {
+      "parameters": {
+        "userId": "={{ $json.body.user.user_id }}",
+        "text": "Здравствуйте! Для активации мониторинга СЭМД, пожалуйста, напишите вашу Фамилию и Инициалы (например: Иванов И.И.)",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-max.maxMessage",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        208
+      ],
+      "id": "cef6cb8a-7f41-479d-89af-26a3f341ed85",
+      "name": "Max Message",
+      "credentials": {
+        "maxApi": {
+          "id": "FBK28KJCcoMgxI3k",
+          "name": "Max account (SEMD)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\n\n// Достаем текст, который написал пользователь\nconst text = body.message?.body?.text || body.text || \"\";\n\n// Достаем ID пользователя, который написал (структура для сообщений)\nconst userId = body.sender?.user_id || body.user?.user_id;\n\nreturn [{ json: { fio: text.trim(), user_id: userId } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        416
+      ],
+      "id": "0b809275-7055-4063-9428-b0273370e55b",
+      "name": "Parse FIO"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Y0EI6Z1LrvNOWwij",
+          "mode": "list",
+          "cachedResultName": "report_recipients",
+          "cachedResultUrl": "/projects/3LENRCaby8GIoTN0/datatables/Y0EI6Z1LrvNOWwij"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "fio",
+              "keyValue": "={{ $json.fio }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        416
+      ],
+      "id": "4ee7fd4f-c1d8-4de5-9c53-1085e64526ca",
+      "name": "Get row(s)1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "66bdc331-d6f0-4fd4-8eb1-5877372b5f3f",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -16,
+        416
+      ],
+      "id": "a0f4a9f7-c4e0-4bfc-b2b2-4fc300b80979",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Y0EI6Z1LrvNOWwij",
+          "mode": "list",
+          "cachedResultName": "report_recipients",
+          "cachedResultUrl": "/projects/3LENRCaby8GIoTN0/datatables/Y0EI6Z1LrvNOWwij"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "fio",
+              "keyValue": "={{ $('Parse FIO').item.json.fio }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "max_user_id": "={{ $('Webhook2').item.json.body.message.sender.user_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fio",
+              "displayName": "fio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "max_user_id",
+              "displayName": "max_user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        400
+      ],
+      "id": "6095fc3c-b299-4d8a-ba19-179791cda9f4",
+      "name": "Update row(s)"
+    },
+    {
+      "parameters": {
+        "userId": "={{ $('Webhook2').item.json.body.message.sender.user_id }}",
+        "text": "Спасибо! Ваше ФИО найдено. Рассылка отчетов СЭМД активирована.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-max.maxMessage",
+      "typeVersion": 1,
+      "position": [
+        528,
+        400
+      ],
+      "id": "80bad736-b214-4b06-991d-3f3d1d913282",
+      "name": "Max Message2",
+      "credentials": {
+        "maxApi": {
+          "id": "FBK28KJCcoMgxI3k",
+          "name": "Max account (SEMD)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "userId": "={{ $('Webhook2').item.json.body.message.sender.user_id }}",
+        "text": "Извините, ваше ФИО не найдено в базе. Обратитесь в отдел АСУ для добавления.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-max.maxMessage",
+      "typeVersion": 1,
+      "position": [
+        528,
+        608
+      ],
+      "id": "d22fb7a1-f747-42c0-91f6-d4b651bd8df1",
+      "name": "Max Message3",
+      "credentials": {
+        "maxApi": {
+          "id": "FBK28KJCcoMgxI3k",
+          "name": "Max account (SEMD)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Приветствие после Начала с просьбой ввести ФИО",
+        "height": 80,
+        "width": 192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -944,
+        208
+      ],
+      "typeVersion": 1,
+      "id": "8feef4cf-cffe-4bba-a868-b258b1e3619f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "После ввода ФИО проверяет есть ли врач в таблице, если есть сообщает что он зареган иначе рекомендует обратиться в АСУ",
+        "height": 128,
+        "width": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -944,
+        432
+      ],
+      "typeVersion": 1,
+      "id": "c38cb026-42c7-4b8e-9406-c1a6060e1a60",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Отчет утром и в конце рабочего дня",
+        "height": 80,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1008,
+        -208
+      ],
+      "typeVersion": 1,
+      "id": "a5f0cfa2-7f8f-46d0-ad1e-b8b0075138ea",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "Регистрация, нужна один раз",
+        "height": 80,
+        "width": 192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        176,
+        208
+      ],
+      "typeVersion": 1,
+      "id": "0df38e5a-aade-477f-b2d2-fa8bee3f0cef",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "sendTo": "chat",
+        "chatId": "-69745742817890",
+        "text": "={{ $json.tableText }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-max.maxMessage",
+      "typeVersion": 1,
+      "position": [
+        768,
+        32
+      ],
+      "id": "c99b95c3-cf93-42e1-9e81-39a964efcda6",
+      "name": "Max Message4",
+      "credentials": {
+        "maxApi": {
+          "id": "FBK28KJCcoMgxI3k",
+          "name": "Max account (SEMD)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Берем все данные, которые пришли из Merge\nconst allData = $input.all();\n\n// Определяем время по Москве (UTC+3)\nconst now = new Date();\nconst moscowTime = new Date(now.getTime() + (3 * 60 * 60 * 1000));\nconst currentHour = moscowTime.getUTCHours();\n\nlet reportType = \"\";\n\n// Если до 12 часов — это утренний отчет (за вчера)\nif (currentHour < 12) {\n    reportType = \"за вчерашний день\";\n} \n// Если после 12 — дневной (за сегодня)\nelse {\n    reportType = \"за текущий день\";\n}\n\n// Формируем текстовый список\nlet tableText = `📊 *Сводка по неподписанным СЭМД (${reportType})*\\n\\n`;\n\nfor (const item of allData) {\n    const fio = item.json.AuthorFIO;\n    const count = item.json.UnsignedCount;\n    tableText += `👤 ${fio} — *${count}* шт.\\n`;\n}\n\ntableText += \"\\n_Пожалуйста, подпишите документы._\";\n\nreturn [{ json: { tableText: tableText } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        32
+      ],
+      "id": "ed925763-cd2c-41f7-8c5a-c2968ca25391",
+      "name": "Format Table"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://platform-api2.max.ru/messages?user_id={{ $json.user_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"{{ $json.text }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1040,
+        -208
+      ],
+      "id": "70b429d9-3df5-4340-b0cd-55dd961d6bed",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "xSbOjOQKgDBuoOSe",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Отправляет каждому индивидуальные данные",
+        "height": 80,
+        "width": 192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        832,
+        -368
+      ],
+      "typeVersion": 1,
+      "id": "b5fc0bd4-a35c-47ee-8c3e-fd7675edb4d8",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "Отправляет в общий чат весь список не зарегистрированных СЭМД (можно настроить определенному пользователю)",
+        "height": 144,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        976,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "252595a0-ee49-4b2f-9f9b-733954110bdb",
+      "name": "Sticky Note5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "If 9:00",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If 9:00": {
+      "main": [
+        [
+          {
+            "node": "Microsoft SQL 9:00",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If 15:00",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If 15:00": {
+      "main": [
+        [
+          {
+            "node": "Microsoft SQL1 15:00",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Microsoft SQL1 15:00": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Microsoft SQL 9:00": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Format Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Max Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook2": {
+      "main": [
+        [
+          {
+            "node": "Parse FIO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse FIO": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Max Message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row(s)": {
+      "main": [
+        [
+          {
+            "node": "Max Message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Table": {
+      "main": [
+        [
+          {
+            "node": "Max Message4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Europe/Moscow",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "f766e153-ec97-4bbf-ae28-e701f7c172c8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "83b11475d22de3e679101d4dda2ff282bd783b900b318248a507c18df746baa3"
+  },
+  "nodeGroups": [],
+  "id": "iGtTMsTWYB4BUrzj",
+  "tags": []
+}
