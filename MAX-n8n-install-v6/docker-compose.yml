@@ -1,0 +1,32 @@
+services:
+  n8n:
+    image: n8nio/n8n:2.42.6
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678"
+    dns:
+      - ${DNS_PRIMARY:-9.9.9.9}
+      - ${DNS_SECONDARY:-8.8.4.4}
+    environment:
+      N8N_HOST: ${DOMAIN}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: https://${DOMAIN}/
+      N8N_EDITOR_BASE_URL: https://${DOMAIN}/
+      N8N_PROXY_HOPS: 1
+      N8N_SECURE_COOKIE: true
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      GENERIC_TIMEZONE: ${TIMEZONE:-Europe/Moscow}
+      TZ: ${TIMEZONE:-Europe/Moscow}
+      N8N_COMMUNITY_PACKAGES_ENABLED: true
+      N8N_DIAGNOSTICS_ENABLED: false
+      N8N_VERSION_NOTIFICATIONS_ENABLED: false
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: true
+      NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
+
+volumes:
+  n8n_data:
