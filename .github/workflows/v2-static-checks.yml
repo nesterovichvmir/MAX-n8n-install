@@ -1,0 +1,29 @@
+name: v2 static checks
+on:
+  push:
+    paths:
+      - "v2/**"
+      - ".github/workflows/v2-static-checks.yml"
+  pull_request:
+    paths:
+      - "v2/**"
+      - ".github/workflows/v2-static-checks.yml"
+  workflow_dispatch:
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Validate JSON templates
+        run: |
+          python -m json.tool v2/workflow.vk.template.json > /dev/null
+          python -m json.tool v2/workflow.semd.template.json > /dev/null
+      - name: Compile Python
+        run: python -m py_compile v2/configure.py v2/check_package.py
+      - name: Check shell syntax
+        run: bash -n v2/install.sh
+      - name: Run package integrity checks
+        run: python v2/check_package.py
