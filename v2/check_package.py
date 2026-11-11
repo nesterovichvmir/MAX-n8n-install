@@ -82,6 +82,10 @@ check("JSON.stringify({ text: $json.object.text || '' })" in configure,
       "installer corrects the text-only HTTP Request5 body")
 check("V2 - MAX Header Auth (VK)" in configure and "V2 - SSH yt-dlp" in configure,
       "VK workflow credentials are replaced during configuration")
+check('Числовой ID группового чата MAX' in configure and 'target_kind' not in configure,
+      "VK module accepts only a group chat ID; personal recipient mode is absent")
+check('"chat_id="+chat_id' in configure,
+      "all VK publication branches send to the configured MAX group chat")
 check("Confirmation String" in configure and "confirmation" in configure.lower(),
       "VK Callback API confirmation string is collected")
 vk_setup = configure[configure.index("def install_vk"):configure.index("def sql_check")]
