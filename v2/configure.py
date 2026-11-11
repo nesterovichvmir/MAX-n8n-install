@@ -174,15 +174,9 @@ def install_vk(key):
     print("Настройка VK → MAX")
     vk_token=ask("Токен сообщества VK (скрытый ввод)",secret=True)
     max_token=ask("Токен MAX-бота (скрытый ввод)",secret=True)
-    print("Куда отправлять публикации VK?")
-    print("1. Личное сообщение пользователю MAX")
-    print("2. Групповой чат MAX")
-    target_kind=ask("Выберите получателя","1")
-    if target_kind not in ("1","2"): die("Допустимы варианты 1 или 2.")
-    target_id=ask("Числовой MAX User ID" if target_kind=="1" else "Числовой MAX Chat ID")
-    if not re.fullmatch(r"[0-9]+" if target_kind=="1" else r"-?[0-9]+",target_id):
-        die("Некорректный числовой ID MAX.")
-    recipient_param="user_id" if target_kind=="1" else "chat_id"
+    chat_id=ask("Числовой ID группового чата MAX (обычно отрицательное число)")
+    if not re.fullmatch(r"-?[0-9]+",chat_id):
+        die("ID группового чата MAX должен быть числовым.")
     vp=props("vkApi",key); hp=props("httpHeaderAuth",key); sp=props("sshPassword",key)
     if not vp or not hp or not sp: die("Не получены схемы Credentials vkApi/httpHeaderAuth/sshPassword.")
     if not {"name","value"}.issubset(hp): die("Неожиданная схема httpHeaderAuth.")
@@ -210,17 +204,14 @@ def install_vk(key):
             n["credentials"]={"httpHeaderAuth":{"id":ch,"name":"V2 - MAX Header Auth (VK)"}}
         elif nm=="Execute a command": n["credentials"]={"sshPassword":{"id":cs,"name":"V2 - SSH yt-dlp"}}
         if nm in ("HTTP Request2","HTTP Request4","HTTP Request5"):
-            n["parameters"]["url"]="https://platform-api2.max.ru/messages?"+recipient_param+"="+target_id
+            n["parameters"]["url"]="https://platform-api2.max.ru/messages?chat_id="+chat_id
         if nm=="HTTP Request5":
             n["parameters"]["jsonBody"]="={{ JSON.stringify({ text: $json.object.text || '' }) }}"
     import_activate(key,w)
     print("Следующий шаг: откройте VK Community Trigger в workflow и скопируйте Production URL.")
     print("В VK добавьте отдельный Callback API сервер, вставьте URL и нажмите Подтвердить.")
     print("ОБЯЗАТЕЛЬНО: Типы событий → Записи на стене → Добавление (wall_post_new). Без этой галочки VK не отправляет новые публикации.")
-    if target_kind=="2":
-        print("Проверьте, что MAX-бот добавлен в целевой групповой чат и ему разрешено участие в группах.")
-    else:
-        print("Для личных сообщений пользователь должен открыть диалог с ботом и разрешить ему отправку сообщений.")
+    print("Проверьте, что MAX-бот добавлен в указанный групповой чат и ему разрешено участие в группах.")
 def sql_check(host,port):
     try:
         with socket.create_connection((host,int(port)),timeout=6): pass
