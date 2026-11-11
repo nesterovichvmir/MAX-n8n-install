@@ -91,7 +91,7 @@ def ensure_packages(key,required):
             if not loaded or str(loaded.get("installedVersion",""))!=version or loaded.get("failedLoading"):
                 die("После перезапуска n8n не подтвердил успешную загрузку "+name+"@"+version+". Workflow не импортирован.")
 def prepare(path,name):
-    w=json.loads(path.read_text(encoding="utf-8")); w["name"]=name; w["active"]=False
+    w=json.loads(path.read_text(encoding="utf-8")); w["name"]=name; w.pop("active",None)
     for k in ("id","versionId","meta","tags","nodeGroups"): w.pop(k,None)
     for n in w.get("nodes",[]):
         n["id"]=str(uuid.uuid4()); n.pop("webhookId",None)
@@ -141,12 +141,24 @@ def prepare_vk_ssh():
         changed=True
     if changed: host_command(["systemctl","restart","ssh"])
     ytdlp=Path("/usr/local/bin/yt-dlp")
-    if not ytdlp.exists():
+    ytdlp_ok=False
+    if ytdlp.exists() and os.access(ytdlp,os.X_OK):
+        test=subprocess.run([str(ytdlp),"--version"],capture_output=True,text=True,timeout=20)
+        ytdlp_ok=(test.returncode==0 and bool(test.stdout.strip()))
+    if not ytdlp_ok:
+        tmp=Path("/usr/local/bin/yt-dlp.new")
         host_command(["curl","-fL","--retry","4","--retry-all-errors",
-                      "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp",
-                      "-o",str(ytdlp)])
-        ytdlp.chmod(0o755)
-    if not os.access(ytdlp,os.X_OK): die("/usr/local/bin/yt-dlp существует, но не исполняемый.")
+                      "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux",
+                      "-o",str(tmp)])
+        tmp.chmod(0o755)
+        test=subprocess.run([str(tmp),"--version"],capture_output=True,text=True,timeout=30)
+        if test.returncode or not test.stdout.strip():
+            tmp.unlink(missing_ok=True)
+            die("Не удалось проверить standalone yt-dlp_linux. Существующий yt-dlp не заменён.")
+        tmp.replace(ytdlp)
+        print("Установлен совместимый standalone yt-dlp: "+test.stdout.strip())
+    else:
+        print("Найден рабочий yt-dlp: "+test.stdout.strip())
     inspect='{{range .NetworkSettings.Networks}}{{println .Gateway}}{{end}}'
     gateways=host_command(["docker","inspect","-f",inspect,CONTAINER]).splitlines()
     host=next((x.strip() for x in gateways if x.strip()),"")
@@ -162,8 +174,15 @@ def install_vk(key):
     print("Настройка VK → MAX")
     vk_token=ask("Токен сообщества VK (скрытый ввод)",secret=True)
     max_token=ask("Токен MAX-бота (скрытый ввод)",secret=True)
-    chat=ask("Числовой ID группового чата MAX")
-    if not re.fullmatch(r"-?[0-9]+",chat): die("ID чата должен быть числовым.")
+    print("Куда отправлять публикации VK?")
+    print("1. Личное сообщение пользователю MAX")
+    print("2. Групповой чат MAX")
+    target_kind=ask("Выберите получателя","1")
+    if target_kind not in ("1","2"): die("Допустимы варианты 1 или 2.")
+    target_id=ask("Числовой MAX User ID" if target_kind=="1" else "Числовой MAX Chat ID")
+    if not re.fullmatch(r"[0-9]+" if target_kind=="1" else r"-?[0-9]+",target_id):
+        die("Некорректный числовой ID MAX.")
+    recipient_param="user_id" if target_kind=="1" else "chat_id"
     vp=props("vkApi",key); hp=props("httpHeaderAuth",key); sp=props("sshPassword",key)
     if not vp or not hp or not sp: die("Не получены схемы Credentials vkApi/httpHeaderAuth/sshPassword.")
     if not {"name","value"}.issubset(hp): die("Неожиданная схема httpHeaderAuth.")
@@ -191,12 +210,17 @@ def install_vk(key):
             n["credentials"]={"httpHeaderAuth":{"id":ch,"name":"V2 - MAX Header Auth (VK)"}}
         elif nm=="Execute a command": n["credentials"]={"sshPassword":{"id":cs,"name":"V2 - SSH yt-dlp"}}
         if nm in ("HTTP Request2","HTTP Request4","HTTP Request5"):
-            n["parameters"]["url"]="https://platform-api2.max.ru/messages?chat_id="+chat
+            n["parameters"]["url"]="https://platform-api2.max.ru/messages?"+recipient_param+"="+target_id
         if nm=="HTTP Request5":
             n["parameters"]["jsonBody"]="={{ JSON.stringify({ text: $json.object.text || '' }) }}"
     import_activate(key,w)
-    print("Следующий шаг: откройте VK Community Trigger в workflow, скопируйте Production URL и укажите его в сообществе VK: Управление → Работа с API → Callback API → Настройки сервера. Подтвердите сервер и включите событие wall_post_new.")
-    print("Также убедитесь, что MAX-бот добавлен в целевой групповой чат и ему разрешено участие в группах.")
+    print("Следующий шаг: откройте VK Community Trigger в workflow и скопируйте Production URL.")
+    print("В VK добавьте отдельный Callback API сервер, вставьте URL и нажмите Подтвердить.")
+    print("ОБЯЗАТЕЛЬНО: Типы событий → Записи на стене → Добавление (wall_post_new). Без этой галочки VK не отправляет новые публикации.")
+    if target_kind=="2":
+        print("Проверьте, что MAX-бот добавлен в целевой групповой чат и ему разрешено участие в группах.")
+    else:
+        print("Для личных сообщений пользователь должен открыть диалог с ботом и разрешить ему отправку сообщений.")
 def sql_check(host,port):
     try:
         with socket.create_connection((host,int(port)),timeout=6): pass
@@ -287,9 +311,25 @@ def main():
     if not BASE.startswith("https://"): die("Не задан корректный HTTPS N8N_BASE_URL.")
     if not MODULES or any(m not in ("semd","vk") for m in MODULES): die("Не задан корректный список модулей.")
     print("Создайте Owner (для новой установки), затем откройте Settings → n8n API → Create an API key.")
-    key=getpass.getpass("n8n API Key (скрытый ввод): ").strip()
-    if not key: die("API Key не введён.")
-    api(key,"/workflows?limit=1"); print("n8n API доступен.")
+    keyfile=Path("/root/.n8n-api-key")
+    key=""
+    if keyfile.exists():
+        try:
+            key=keyfile.read_text(encoding="utf-8").strip()
+            if key: api(key,"/workflows?limit=1")
+            else: key=""
+        except Exception:
+            key=""
+    if key:
+        print("Используется сохранённый n8n API Key (/root/.n8n-api-key).")
+    else:
+        key=getpass.getpass("n8n API Key (ввод скрыт): ").strip()
+        if not key: die("API Key не введён.")
+        api(key,"/workflows?limit=1")
+        if os.geteuid()!=0: die("Для безопасного сохранения API Key запустите установщик через sudo.")
+        keyfile.write_text(key+"\\n",encoding="utf-8")
+        keyfile.chmod(0o600)
+        print("n8n API Key сохранён в /root/.n8n-api-key с правами 600.")
     selected=list(MODULES)
     all_workflows=items(api(key,"/workflows?limit=250"))
     for module,workflow in (("semd","Report СЭМД"),("vk","VK → MAX (v2)")):
