@@ -327,7 +327,7 @@ def main():
         if not key: die("API Key не введён.")
         api(key,"/workflows?limit=1")
         if os.geteuid()!=0: die("Для безопасного сохранения API Key запустите установщик через sudo.")
-        keyfile.write_text(key+"\\n",encoding="utf-8")
+        keyfile.write_text(key+"\n",encoding="utf-8")
         keyfile.chmod(0o600)
         print("n8n API Key сохранён в /root/.n8n-api-key с правами 600.")
     selected=list(MODULES)
