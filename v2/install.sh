@@ -33,7 +33,17 @@ if [[ -n "$CONTAINER" ]]; then
   echo "Найден работающий n8n $N8N_VERSION: $CONTAINER"
   read -r -p "Добавить выбранные модули в существующую установку? [Д/н]: " ans
   [[ "$ans" =~ ^([Дд]|[Yy]|)$ ]] || fail "Операция отменена."
-  read -r -p "Публичный URL n8n (https://n8n.example.ru): " N8N_BASE_URL
+  N8N_ENV="$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$CONTAINER")"
+  DETECTED_HOST="$(printf '%s\n' "$N8N_ENV" | sed -n 's/^N8N_HOST=//p' | head -n1)"
+  DETECTED_PROTOCOL="$(printf '%s\n' "$N8N_ENV" | sed -n 's/^N8N_PROTOCOL=//p' | head -n1)"
+  DETECTED_URL=""
+  if [[ -n "$DETECTED_HOST" ]]; then
+    DETECTED_PROTOCOL="${DETECTED_PROTOCOL:-https}"
+    DETECTED_URL="$DETECTED_PROTOCOL://$DETECTED_HOST"
+  fi
+  read -r -p "Публичный URL n8n [${DETECTED_URL:-https://n8n.example.ru}]: " N8N_BASE_URL
+  N8N_BASE_URL="${N8N_BASE_URL:-$DETECTED_URL}"
+  [[ "$N8N_BASE_URL" =~ ^https?:// ]] || N8N_BASE_URL="https://$N8N_BASE_URL"
   N8N_BASE_URL="$(printf '%s' "$N8N_BASE_URL" | sed 's:/*$::')"
   [[ "$N8N_BASE_URL" =~ ^https://[^/]+$ ]] || fail "Нужен полный HTTPS URL без пути."
   DB_TYPE="$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$CONTAINER" | sed -n 's/^DB_TYPE=//p' | head -n1)"
