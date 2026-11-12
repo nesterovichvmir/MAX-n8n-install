@@ -3,3 +3,9 @@ MAX-n8n-install v2 — modular installer package\n\n- Separate v2 directory; roo
 - Post-install instructions require the administrator to register the trigger Production URL in VK Callback API and enable `wall_post_new`.\n- All three JavaScript Code node scripts are checked byte-for-byte by check_package.py.\n- Target MAX chat ID is parameterized in all three send nodes.\n- Text-only request body in HTTP Request5 is normalized to a valid n8n expression.\n- yt-dlp is installed on the Ubuntu host; dedicated non-sudo SSH account is configured.\n- SSH password persists in a root-only file for repeatability.
 - Installer verifies that the n8n container can reach the host SSH service and rejects sudo membership for the dedicated account. SSH provisioning runs only when VK is actually missing; existing user passwords are not reset.
 - SEMD registers only the `bot_started` subscription; the workflow registers `message_created` itself, avoiding duplicate subscriptions.\n- Official OS support: Ubuntu Server 22.04/24.04 LTS.\n- Administrator must start installer inside screen; installer does not create screen itself.\n- Run bash -n, py_compile, and check_package.py before install; functional tests on a disposable VM remain mandatory.\n
+
+Latest v2 maintenance updates:
+- Selected module configuration prompts are explicitly labeled (e.g. "МОДУЛЬ 1 ИЗ 2 — СЭМД"); each prompt also carries the current module label. Numbering is calculated from the modules still requiring installation.
+- Existing n8n public URL is detected from container settings and used without an extra prompt when available.
+- VK → MAX requires the MAX bot to be added to the target group chat and made an administrator; only a numeric group chat ID is accepted.
+- Full administrator guide: ADMIN_GUIDE_V2.md, with visual interface diagrams for API Key, Production URL, Callback API and the wall-post event.
