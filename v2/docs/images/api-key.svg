@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="620" viewBox="0 0 1100 620">
+<rect width="1100" height="620" rx="18" fill="#111318"/><rect x="26" y="24" width="1048" height="572" rx="14" fill="#191c22" stroke="#3b414d"/>
+<text x="70" y="82" fill="#f4f6fa" font-family="Arial,sans-serif" font-size="30" font-weight="700">Settings  /  n8n API</text>
+<rect x="760" y="48" width="250" height="54" rx="8" fill="#e96b18"/><text x="885" y="82" text-anchor="middle" fill="#fff" font-family="Arial" font-size="20" font-weight="700">Create API key</text>
+<rect x="250" y="130" width="600" height="420" rx="14" fill="#252a32" stroke="#555e6c"/>
+<text x="292" y="178" fill="#fff" font-family="Arial" font-size="28" font-weight="700">Create API Key</text>
+<text x="292" y="225" fill="#dfe4eb" font-family="Arial" font-size="18">Label</text><rect x="292" y="240" width="516" height="48" rx="6" fill="#11151b" stroke="#515b68"/><text x="312" y="271" fill="#b8c2d0" font-family="Arial" font-size="18">MAX n8n installer</text>
+<text x="292" y="330" fill="#dfe4eb" font-family="Arial" font-size="18">Expiration</text><rect x="292" y="345" width="516" height="48" rx="6" fill="#11151b" stroke="#e96b18" stroke-width="2"/><text x="312" y="376" fill="#fff" font-family="Arial" font-size="18">Select a long validity period</text><text x="780" y="376" fill="#fff" font-family="Arial" font-size="18">⌄</text>
+<text x="292" y="432" fill="#dfe4eb" font-family="Arial" font-size="18">Scopes</text><rect x="292" y="447" width="516" height="62" rx="8" fill="#30251e" stroke="#e96b18" stroke-width="2"/><circle cx="320" cy="478" r="9" fill="#e96b18"/><text x="344" y="474" fill="#fff" font-family="Arial" font-size="18" font-weight="700">All</text><text x="344" y="496" fill="#bfc7d2" font-family="Arial" font-size="14">Full access required for installation and configuration</text>
+<text x="70" y="575" fill="#aab4c2" font-family="Arial" font-size="17">Illustration: choose an expiry period allowed by your organization's policy and grant the required scopes.</text>
+</svg>
