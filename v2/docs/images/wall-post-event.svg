@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="620" viewBox="0 0 1100 620">
+<rect width="1100" height="620" rx="18" fill="#eef0f3"/><rect x="32" y="24" width="1036" height="570" rx="14" fill="#fff" stroke="#d4dbe4"/>
+<rect x="72" y="64" width="220" height="48" rx="8" fill="#eaf2fb"/><text x="182" y="95" text-anchor="middle" fill="#2767a6" font-family="Arial" font-size="19" font-weight="700">Типы событий</text>
+<text x="82" y="164" fill="#36485a" font-family="Arial" font-size="22" font-weight="700">Записи на стене</text>
+<rect x="84" y="196" width="28" height="28" rx="5" fill="#4b82c1"/><path d="M91 210 L99 218 L108 202" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="136" y="218" fill="#26384a" font-family="Arial" font-size="21" font-weight="700">Добавление</text>
+<rect x="70" y="178" width="800" height="72" rx="8" fill="none" stroke="#4b82c1" stroke-width="2"/>
+<rect x="84" y="280" width="24" height="24" rx="4" fill="#fff" stroke="#aeb9c6" stroke-width="2"/><text x="136" y="300" fill="#526171" font-family="Arial" font-size="19">Поделились</text>
+<rect x="84" y="340" width="24" height="24" rx="4" fill="#fff" stroke="#aeb9c6" stroke-width="2"/><text x="136" y="360" fill="#526171" font-family="Arial" font-size="19">Редактирование</text>
+<rect x="84" y="400" width="24" height="24" rx="4" fill="#fff" stroke="#aeb9c6" stroke-width="2"/><text x="136" y="420" fill="#526171" font-family="Arial" font-size="19">Удаление</text>
+<path d="M900 210 H1000" stroke="#4b82c1" stroke-width="4"/><path d="M985 195 L1000 210 L985 225" fill="none" stroke="#4b82c1" stroke-width="4"/>
+<text x="890" y="265" fill="#2767a6" font-family="Arial" font-size="17" font-weight="700">Включить</text>
+<text x="72" y="540" fill="#35465a" font-family="Arial" font-size="18" font-weight="700">Для пересылки новых публикаций включите именно «Записи на стене → Добавление».</text>
+<text x="72" y="572" fill="#657487" font-family="Arial" font-size="15">Названия и расположение элементов могут незначительно отличаться в интерфейсе VK.</text>
+</svg>
