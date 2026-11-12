@@ -41,8 +41,13 @@ if [[ -n "$CONTAINER" ]]; then
     DETECTED_PROTOCOL="${DETECTED_PROTOCOL:-https}"
     DETECTED_URL="$DETECTED_PROTOCOL://$DETECTED_HOST"
   fi
-  read -r -p "Публичный URL n8n [${DETECTED_URL:-https://n8n.example.ru}]: " N8N_BASE_URL
-  N8N_BASE_URL="${N8N_BASE_URL:-$DETECTED_URL}"
+  if [[ -n "$DETECTED_URL" ]]; then
+    N8N_BASE_URL="$DETECTED_URL"
+    echo "Публичный URL n8n обнаружен автоматически: $N8N_BASE_URL"
+  else
+    read -r -p "Публичный URL n8n: " N8N_BASE_URL
+  fi
+  [[ -n "$N8N_BASE_URL" ]] || fail "Не удалось определить URL n8n. Укажите публичный HTTPS URL."
   [[ "$N8N_BASE_URL" =~ ^https?:// ]] || N8N_BASE_URL="https://$N8N_BASE_URL"
   N8N_BASE_URL="$(printf '%s' "$N8N_BASE_URL" | sed 's:/*$::')"
   [[ "$N8N_BASE_URL" =~ ^https://[^/]+$ ]] || fail "Нужен полный HTTPS URL без пути."

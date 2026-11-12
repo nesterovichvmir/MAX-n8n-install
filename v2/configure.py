@@ -5,11 +5,13 @@ ROOT=Path(__file__).resolve().parent
 BASE=os.environ.get("N8N_BASE_URL","").rstrip("/")
 CONTAINER=os.environ.get("CONTAINER","n8n")
 MODULES=os.environ.get("MODULES","").split()
+CURRENT_MODULE=""
 
 def die(msg):
     print("\nОШИБКА: "+str(msg),file=sys.stderr); raise SystemExit(1)
 def ask(label,default=None,secret=False,required=True):
-    p=label+(" ["+str(default)+"]" if default not in (None,"") else "")+": "
+    scope=("["+CURRENT_MODULE+"] ") if CURRENT_MODULE else ""
+    p=scope+label+(" ["+str(default)+"]" if default not in (None,"") else "")+": "
     v=getpass.getpass(p) if secret else input(p)
     v=v.strip() if v else (str(default) if default is not None else "")
     if required and not v: die("Не заполнено поле: "+label)
@@ -171,7 +173,9 @@ def install_vk(key):
     name="VK → MAX (v2)"
     if name in workflow_names(key): die("Workflow "+name+" уже существует; перезапись запрещена.")
     print()
-    print("Настройка VK → MAX")
+    print("Сейчас будут запрошены настройки сообщества ВКонтакте и группового чата MAX.")
+    print("До продолжения добавьте MAX-бота в нужный групповой чат и назначьте его администратором.")
+    print("Модуль VK → MAX отправляет публикации только в групповой чат.")
     vk_token=ask("Токен сообщества VK (скрытый ввод)",secret=True)
     max_token=ask("Токен MAX-бота (скрытый ввод)",secret=True)
     chat_id=ask("Числовой ID группового чата MAX (обычно отрицательное число)")
@@ -246,7 +250,7 @@ def callbacks(domain,token):
 def install_semd(key):
     name="Report СЭМД"
     if name in workflow_names(key): die("Workflow Report СЭМД уже существует. v2 его не перезаписывает; если СЭМД уже работает, выберите только VK → MAX.")
-    print("\nНастройка СЭМД")
+    print("\nСейчас будут запрошены параметры подключения к SQL Server, MAX-боту и получателю отчётов.")
     domain=urllib.parse.urlparse(BASE).hostname
     host=ask("Имя/IP SQL Server"); port=ask("TCP-порт SQL Server","1433")
     if not port.isdigit() or not 1<=int(port)<=65535: die("Некорректный TCP-порт.")
@@ -298,6 +302,14 @@ def install_semd(key):
                 n["disabled"]=False; n["parameters"]["sendTo"]="user"; n["parameters"]["userId"]=str(target); n["parameters"].pop("chatId",None)
     callbacks(domain,token); import_activate(key,w)
     print("Создана/проверена пустая Data Table report_recipients (fio, max_user_id). Заполните вручную только fio.")
+def module_banner(number,total,title,description):
+    global CURRENT_MODULE
+    CURRENT_MODULE=title
+    print("\n"+"="*68)
+    print("МОДУЛЬ "+str(number)+" ИЗ "+str(total)+" — "+title)
+    print(description)
+    print("="*68)
+
 def main():
     if not BASE.startswith("https://"): die("Не задан корректный HTTPS N8N_BASE_URL.")
     if not MODULES or any(m not in ("semd","vk") for m in MODULES): die("Не задан корректный список модулей.")
@@ -337,8 +349,17 @@ def main():
     if "semd" in selected: required.append(("n8n-nodes-max","1.1.2"))
     if "vk" in selected: required.append(("n8n-nodes-vk-community","0.1.2"))
     ensure_packages(key,required)
-    if "semd" in selected: install_semd(key)
-    if "vk" in selected: install_vk(key)
+    total=len(selected)
+    position=0
+    if "semd" in selected:
+        position+=1
+        module_banner(position,total,"СЭМД","Настройка ежедневных отчётов о неподписанных СЭМД через MAX.")
+        install_semd(key)
+    if "vk" in selected:
+        position+=1
+        module_banner(position,total,"VK → MAX","Настройка автоматической пересылки новых публикаций сообщества ВКонтакте в групповой чат MAX.")
+        install_vk(key)
+    CURRENT_MODULE=""
     print("\nУСТАНОВКА ВЫБРАННЫХ МОДУЛЕЙ ЗАВЕРШЕНА. Существующие Credentials и workflow не перезаписывались.")
     print("Проверьте тестовые сценарии до ввода в эксплуатацию.")
 if __name__=="__main__":
